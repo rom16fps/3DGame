@@ -4,6 +4,7 @@ import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -27,12 +28,12 @@ public class Main extends ApplicationAdapter {
     Model model;
     ModelInstance modelInstance;
     Environment environment;
+    float sensitivity = 0.2f;
 
     @Override
     public void create() {
         camera = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         camera.position.set(2f, 2f, 4f); // Move the camera back to see the cube
-        camera.lookAt(0, 0, 0);
         camera.near = 0.1f;
         camera.far = 100f;
         camera.update();
@@ -49,6 +50,8 @@ public class Main extends ApplicationAdapter {
 
         // Set up ModelBatch for rendering
         modelBatch = new ModelBatch();
+
+        Gdx.input.setCursorCatched(true);
     }
 
     @Override
@@ -56,6 +59,8 @@ public class Main extends ApplicationAdapter {
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
+        handleMouseInput();
+        handleKeyboardInput(Gdx.graphics.getDeltaTime());
 
         modelInstance.transform.rotate(0, 1, 0, 1f); // Rotate around Y-axis
 
@@ -66,6 +71,39 @@ public class Main extends ApplicationAdapter {
         modelBatch.begin(camera);
         modelBatch.render(modelInstance, environment);
         modelBatch.end();
+    }
+
+    private void handleMouseInput() {
+        float deltaX = -Gdx.input.getDeltaX() * sensitivity;
+        float deltaY = -Gdx.input.getDeltaY() * sensitivity;
+
+        // Rotate the camera directly
+        camera.direction.rotate(camera.up, deltaX); // Horizontal rotation (yaw)
+        camera.direction.rotate(camera.direction.cpy().crs(camera.up), deltaY); // Vertical rotation (pitch)
+    }
+
+    private void handleKeyboardInput(float deltaTime) {
+        Vector3 forward = new Vector3(camera.direction.x, 0, camera.direction.z).nor(); // Ignore vertical movement
+        Vector3 right = new Vector3(camera.direction).crs(camera.up).nor(); // Perpendicular to forward
+
+        Vector3 moveDirection = new Vector3();
+
+        if (Gdx.input.isKeyPressed(Input.Keys.W)) {
+            moveDirection.add(forward);
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.S)) {
+            moveDirection.sub(forward);
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.A)) {
+            moveDirection.sub(right);
+        }
+        if (Gdx.input.isKeyPressed(Input.Keys.D)) {
+            moveDirection.add(right);
+        }
+
+        moveDirection.nor();
+
+        camera.position.add(moveDirection);
     }
 
     @Override

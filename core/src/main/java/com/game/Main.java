@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.Material;
+import com.badlogic.gdx.math.collision.BoundingBox;
 
 
 import java.util.HashMap;
@@ -27,14 +28,18 @@ public class Main extends ApplicationAdapter {
     Environment environment;
     float sensitivity = 0.2f;
 
+    Player player;
+
     // Using a HashMap to store chunks (each identified by its integer coordinates)
     HashMap<Vector3, Chunk> chunks = new HashMap<>();
 
     @Override
     public void create() {
+        player = new Player(new Vector3(0,50,0));
+
         // Set up camera
         camera = new PerspectiveCamera(67, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-        camera.position.set(2f, 2f, 4f);
+        camera.position.set(player.position);
         camera.near = 0.1f;
         camera.far = 1000f;
         camera.update();
@@ -57,21 +62,25 @@ public class Main extends ApplicationAdapter {
         noise.SetFrequency(0.02f);
 
         // Generate blocks in a 300x300 grid and assign them to chunks
-        for (int i = 0; i < 300; i++) {
-            for (int e = 0; e < 300; e++) {
-                int height = (int) (noise.GetNoise(i, e) * 20);
-                Vector3 blockPos = new Vector3(i, height, e);
+        for (int i = 0; i < 100; i++) {
+            for (int e = 0; e < 100; e++) {
+                int maxHeight = (int) (noise.GetNoise(i, e) * 20);
+                for(int a = -10; a<maxHeight;a++){
 
-                // Get or create the chunk for this block position
-                Chunk chunk = getOrCreateChunk(i, height, e);
+                    Vector3 blockPos = new Vector3(i, a, e);
 
-                // Create a new block instance and set its translation
-                ModelInstance blockInstance = new ModelInstance(model);
-                blockInstance.transform.setToTranslation(blockPos);
+                    // Get or create the chunk for this block position
+                    Chunk chunk = getOrCreateChunk(i, a, e);
 
-                // Store the block in the chunk using its integer coordinates as key
-                // (We create a new Vector3 with integer values to avoid precision issues)
-                chunk.blocks.put(new Vector3((int) blockPos.x, (int) blockPos.y, (int) blockPos.z), blockInstance);
+                    // Create a new block instance and set its translation
+                    ModelInstance blockInstance = new ModelInstance(model);
+                    blockInstance.transform.setToTranslation(blockPos);
+
+                    // Store the block in the chunk using its integer coordinates as key
+                    // (We create a new Vector3 with integer values to avoid precision issues)
+                    chunk.blocks.put(blockPos, blockInstance);
+                }
+
             }
         }
 
@@ -88,6 +97,7 @@ public class Main extends ApplicationAdapter {
     public void render() {
         // Clear the screen
         Gdx.gl.glViewport(0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        Gdx.gl.glClearColor(0.7f, 0.7f, 1.0f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
         // Update camera based on mouse and keyboard input
@@ -145,7 +155,9 @@ public class Main extends ApplicationAdapter {
         if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) moveDirection.sub(up);
 
         moveDirection.nor().scl(0.2f);
-        camera.position.add(moveDirection);
+        Vector3 newPosition = new Vector3(camera.position).add(moveDirection);
+
+        camera.position.set(newPosition);
     }
 
     @Override
@@ -163,7 +175,7 @@ public class Main extends ApplicationAdapter {
      * to see if a block exists in the corresponding chunk.
      */
 
-    public ModelInstance getTargetedBlock(float maxDistance) {
+    ModelInstance getTargetedBlock(float maxDistance) {
         Vector3 rayStart = new Vector3(camera.position);
         Vector3 rayDirection = new Vector3(camera.direction).nor();
 
@@ -187,9 +199,8 @@ public class Main extends ApplicationAdapter {
     }
 
 
-    private Model createTexturedCube(Material material) {
-        // Create the model using ModelBuilder's createBox method
-        // This automatically handles the UV mapping for the cube
+    Model createTexturedCube(Material material) {
+
         ModelBuilder modelBuilder = new ModelBuilder();
         return modelBuilder.createBox(1f, 1f, 1f, material,
             VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
@@ -219,5 +230,4 @@ public class Main extends ApplicationAdapter {
         Vector3 chunkPos = new Vector3(cx, cy, cz);
         return chunks.computeIfAbsent(chunkPos, k -> new Chunk());
     }
-
 }

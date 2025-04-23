@@ -64,13 +64,10 @@ public class Main extends ApplicationAdapter {
         // Generate blocks in a 300x300 grid and assign them to chunks
         for (int i = 0; i < 100; i++) {
             for (int e = 0; e < 100; e++) {
-                int maxHeight = (int) (noise.GetNoise(i, e) * 20);
-                for(int a = -10; a<maxHeight;a++){
-
-                    Vector3 blockPos = new Vector3(i, a, e);
+                    Vector3 blockPos = new Vector3(i, (int) (noise.GetNoise(i, e) * 20), e);
 
                     // Get or create the chunk for this block position
-                    Chunk chunk = getOrCreateChunk(i, a, e);
+                    Chunk chunk = getOrCreateChunk(i, (int) (noise.GetNoise(i, e) * 20), e);
 
                     // Create a new block instance and set its translation
                     ModelInstance blockInstance = new ModelInstance(model);
@@ -79,7 +76,7 @@ public class Main extends ApplicationAdapter {
                     // Store the block in the chunk using its integer coordinates as key
                     // (We create a new Vector3 with integer values to avoid precision issues)
                     chunk.blocks.put(blockPos, blockInstance);
-                }
+
 
             }
         }

@@ -9,9 +9,13 @@ import java.util.HashMap;
 public class Chunk {
     public ModelCache modelCache;
     public HashMap<Vector3, ModelInstance> blocks = new HashMap<>();
+    Vector3 positionInChunkCoords;
 
-    public Chunk() {
+    public boolean full = false;
+
+    public Chunk(Vector3 positionInChunkCoords) {
         modelCache = new ModelCache();
+        this.positionInChunkCoords = positionInChunkCoords;
     }
 
     public void rebuildCache() {

@@ -3,7 +3,6 @@ package com.game;
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g3d.attributes.TextureAttribute;
-import com.badlogic.gdx.graphics.g3d.environment.PointLight;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
@@ -26,6 +25,7 @@ import java.util.Map;
 public class Main extends ApplicationAdapter {
     ModelBatch modelBatch;
     Model model;
+    Model grassModel;
     Environment environment;
     float sensitivity = 0.2f;
 
@@ -55,8 +55,13 @@ public class Main extends ApplicationAdapter {
         texture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         material.set(TextureAttribute.createDiffuse(texture));
 
+        Material grassMaterial = new Material();
+        Texture grassTexture = new Texture("grass.jpg");
+        grassTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        grassMaterial.set(TextureAttribute.createDiffuse(grassTexture));
+
         model = createTexturedCube(material);
-        // Create a noise generator (using FastNoiseLite, assumed to be available)
+        grassModel = createTexturedCube(grassMaterial);
 
         noise.SetNoiseType(FastNoiseLite.NoiseType.Perlin);
         noise.SetFrequency(0.02f);
@@ -64,13 +69,20 @@ public class Main extends ApplicationAdapter {
         // Generate blocks in a 300x300 grid and assign them to chunks
         for (int i = 0; i < 100; i++) {
             for (int e = 0; e < 100; e++) {
-                    Vector3 blockPos = new Vector3(i, (int) (noise.GetNoise(i, e) * 20), e);
+                for(int v = 0; v<=(int) (noise.GetNoise(i, e) * 40)+15;v++){
+                    Vector3 blockPos = new Vector3(i, v, e);
 
                     // Get or create the chunk for this block position
 
-                    Chunk chunk = getOrCreateChunk(i, (int) (noise.GetNoise(i, e) * 20), e);
+                    Chunk chunk = getOrCreateChunk(i, v, e);
+                    ModelInstance blockInstance;
                     // Create a new block instance and set its translation
-                    ModelInstance blockInstance = new ModelInstance(model);
+                    if(v == (int) (noise.GetNoise(i, e) * 40)+15){
+                        blockInstance = new ModelInstance(grassModel);
+                    }else{
+                        blockInstance = new ModelInstance(model);
+                    }
+
                     blockInstance.transform.setToTranslation(blockPos);
 
                     // Store the block in the chunk using its integer coordinates as key
@@ -78,6 +90,7 @@ public class Main extends ApplicationAdapter {
                     chunk.blocks.put(blockPos, blockInstance);
 
 
+                }
             }
         }
 
@@ -251,7 +264,6 @@ public class Main extends ApplicationAdapter {
             VertexAttributes.Usage.Position | VertexAttributes.Usage.Normal | VertexAttributes.Usage.TextureCoordinates);
     }
 
-
     public Chunk getChunkAt(int x, int y, int z) {
         int cx = x / 16;
         int cy = y / 16;
@@ -269,21 +281,4 @@ public class Main extends ApplicationAdapter {
         return chunks.computeIfAbsent(chunkPos, k -> new Chunk(new Vector3(cx, cy, cz)));
     }
 
-    public void populateChunk(Chunk chunk){
-        for (int i = 0; i < 16; i++) {
-            for (int e = 0; e < 16; e++) {
-                Vector3 blockPos = new Vector3(chunk.positionInChunkCoords.x*16+i, (int) (noise.GetNoise(i, e) * 20), chunk.positionInChunkCoords.z*16+e);
-
-                // Create a new block instance and set its translation
-                ModelInstance blockInstance = new ModelInstance(model);
-                blockInstance.transform.setToTranslation(blockPos);
-
-                // Store the block in the chunk using its integer coordinates as key
-                // (We create a new Vector3 with integer values to avoid precision issues)
-                chunk.blocks.put(blockPos, blockInstance);
-            }
-        }
-
-        chunk.full = true;
-    }
 }

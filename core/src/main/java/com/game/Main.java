@@ -16,6 +16,10 @@ import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.math.collision.BoundingBox;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 
 import java.util.HashMap;
@@ -28,6 +32,9 @@ public class Main extends ApplicationAdapter {
     Model grassModel;
     Environment environment;
     float sensitivity = 0.2f;
+
+    Stage stage;
+    Image crosshair;
 
     float gravity = 18f;
 
@@ -43,6 +50,19 @@ public class Main extends ApplicationAdapter {
     @Override
     public void create() {
         player = new Player(new Vector3(0,50,0));
+
+        crosshair = new Image(new Texture("grass.jpg"));
+        crosshair.setSize(40,40);
+        crosshair.setPosition(Gdx.graphics.getWidth()/2-20,Gdx.graphics.getHeight()/2-20);
+
+        stage = new Stage(new FitViewport(Gdx.graphics.getWidth(), Gdx.graphics.getHeight()));
+        stage.getViewport().setCamera(new OrthographicCamera());
+        stage.getCamera().position.x = 0;
+        stage.getCamera().position.y = 0;
+        stage.getCamera().update();
+
+        stage.addActor(crosshair);
+
 
         // Set up lighting/environment
         environment = new Environment();
@@ -145,6 +165,10 @@ public class Main extends ApplicationAdapter {
             modelBatch.render(chunk.modelCache, environment);
         }
         modelBatch.end();
+
+        stage.getViewport().apply(true);
+        stage.act();
+        stage.draw();
     }
 
     void handleMouseInput() {
